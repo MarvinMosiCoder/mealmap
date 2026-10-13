@@ -1,0 +1,22 @@
+{
+  "tool": "Built-in imagegen",
+  "files": "assets/images/meals/<name>.png",
+  "prompts": [
+    {
+      "name": "breakfast",
+      "prompt": "Create a polished soft 3D clay-render illustration for a mobile nutrition app meal card. Square image, no text, no lettering, no logos, no frame. Orthographic three-quarter view, rounded sculptural objects, soft studio lighting from upper right, beautiful long soft shadow cast toward lower left. Subject occupies the center lower 65 percent, generous clear area across the upper 20 percent reserved for UI label. Subject: one sunny-side-up fried egg with creamy white and a glossy apricot-orange yolk, on a tiny pale cream round plate, tilted slightly toward viewer. Matte warm buttery yellow seamless background and ground. Charming minimal premium product illustration."
+    },
+    {
+      "name": "lunch",
+      "prompt": "Create a polished soft 3D clay-render illustration for a mobile nutrition app meal card. Square image, no text, no lettering, no logos, no frame. Orthographic three-quarter view, rounded sculptural objects, soft studio lighting from upper right, beautiful long soft shadow cast toward lower left. Subject occupies the center lower 65 percent, generous clear area across the upper 20 percent reserved for UI label. Subject: a mint-turquoise ceramic bowl generously filled with folded leafy green salad, avocado, cucumber and two tiny cherry tomatoes. Matte pale mint aqua seamless background and ground. Charming minimal premium product illustration."
+    },
+    {
+      "name": "dinner",
+      "prompt": "Create a polished soft 3D clay-render illustration for a mobile nutrition app meal card. Square image, no text, no lettering, no logos, no frame. Orthographic three-quarter view, rounded sculptural objects, soft studio lighting from upper right, beautiful long soft shadow cast toward lower left. Subject occupies the center lower 65 percent, generous clear area across the upper 20 percent reserved for UI label. Subject: a single elegant rounded pastel teal serving cloche with little spherical knob on a matching teal platter; soft satin ceramic finish and delicate rim. Matte muted turquoise seamless background and ground. Charming minimal premium product illustration."
+    },
+    {
+      "name": "snacks",
+      "prompt": "Create a polished soft 3D clay-render illustration for a mobile nutrition app meal card. Square image, no text, no lettering, no logos, no frame. Orthographic three-quarter view, rounded sculptural objects, soft studio lighting from upper right, beautiful long soft shadow cast toward lower left. Subject occupies the center lower 65 percent, generous clear area across the upper 20 percent reserved for UI label. Subject: one lavender lilac chocolate bar with six rounded raised chocolate squares and one bite missing at the near right corner, on a pale blue seamless background and ground. Soft pastel purple ceramic chocolate appearance. Charming minimal premium product illustration."
+    }
+  ]
+}

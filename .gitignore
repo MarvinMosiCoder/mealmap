@@ -32,6 +32,10 @@ yarn-error.*
 
 # local env files
 .env*.local
+backend/.env
+
+# Local validation artifacts
+.preview/
 
 # typescript
 *.tsbuildinfo
