@@ -1,8 +1,10 @@
 ﻿# Meal Map
 
-An Expo SDK 55 / React Native UI starter with a login form and daily log inspired by the supplied reference. Layouts use NativeWind 4 and Tailwind CSS 3 utilities.
+An Expo SDK 55 / React Native mobile UI template for Meal Map. The Home dashboard uses a green palette, rounded cards, meal illustrations, and Poppins fonts. Screens and components use NativeWind 4 with Tailwind CSS 3; navigation uses Expo Router.
 
-The daily log displays sample calories, macros, a week indicator, and four meal cards. The login form checks its inputs and opens the daily log for preview. You can implement authentication, food logging, and persistent data when ready.
+Home displays a featured dinner, a calorie and macro summary, and today's three meals. Five real tabs appear in this order: Meals, Plan, Home, Groceries, and Profile. The dark tab bar has a raised green Home button in the center. The other screens are placeholders; Profile currently uses an HTML element that needs conversion to React Native before mobile use.
+
+The separate `/login` form validates its inputs and opens Home for preview. Meal values are hardcoded, and authentication, meal planning, and persistence remain to be implemented.
 
 ## Run locally
 
@@ -19,12 +21,17 @@ Use the terminal options to open an Android emulator, iOS simulator on macOS, or
 
 | File | Purpose |
 | --- | --- |
-| `src/app/index.tsx` | Daily log layout and sample values |
+| `src/app/(tabs)/index.tsx` | Home dashboard, logo, and search appearance |
+| `src/app/(tabs)/_layout.tsx` | Five-tab navigator and custom center Home button |
+| `src/app/(tabs)/meals.tsx`, `plan.tsx`, `groceries.tsx`, `profile.tsx` | Tab screen placeholders |
 | `src/app/login.tsx` | Login layout and preview submit handler |
-| `src/app/_layout.tsx` | Expo Router stack, font loading, and global CSS |
-| `src/components/` | Calorie ring, meal cards, and decorative bottom navigation |
+| `src/app/_layout.tsx` | Root stack for tabs and login, font loading, and global CSS |
+| `src/components/featured-meal-card.tsx` | Featured dinner content and illustration |
+| `src/components/nutrition-summary.tsx` | SVG calorie ring and macro bars |
+| `src/components/todays-meals.tsx` | Sample meal list and thumbnails |
 | `tailwind.config.js` | Colors, spacing, and Poppins font utilities |
 | `assets/images/meals/` | Local meal illustrations |
+| `assets/images/system/mealmap.png` | Home header logo |
 
 See [template notes](docs/template.md) for styling and extension points. The retained Express/PostgreSQL backend is optional and disconnected from the UI; see [backend notes](docs/backend.md).
 

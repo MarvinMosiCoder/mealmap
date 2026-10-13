@@ -1,10 +1,10 @@
 ﻿# Optional backend reference
 
-`backend/` retains the existing Express 5/PostgreSQL authentication service. The Meal Map UI does not call it; previewing either screen does not require it.
+`backend/` retains the existing Express 5/PostgreSQL authentication service. The Meal Map dashboard, tabs, and login template do not call it; the UI can be developed without running this service. The login form currently performs local validation and opens Home.
 
 ## Setup
 
-From `backend/`, after configuring PostgreSQL:
+Configure PostgreSQL and create `backend/.env` with the database settings described below. Then run from `backend/`:
 
 ```sh
 npm ci
