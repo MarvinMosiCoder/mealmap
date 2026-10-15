@@ -1,34 +1,58 @@
-﻿# Optional backend reference
+# Backend routes and authentication middleware
 
-`backend/` retains the existing Express 5/PostgreSQL authentication service. The Meal Map dashboard, tabs, and login template do not call it; the UI can be developed without running this service. The login form currently performs local validation and opens Home.
+The API is connected to native email/password authentication. It runs separately from Expo, using the package and environment file in `backend/`. See [setup.md](setup.md).
 
-## Setup
+## Module responsibilities
 
-Configure PostgreSQL and create `backend/.env` with the database settings described below. Then run from `backend/`:
+| File under backend/ | Responsibility |
+| --- | --- |
+| `server.mjs` | Creates the pool/app and listens on all interfaces; PORT defaults to 3000 |
+| `app.mjs` | Configures CORS and JSON, mounts routers, then registers error handling |
+| `db.mjs` | Creates a pg pool with a five-second connection timeout and idle-pool error logging |
+| `auth-middleware.mjs` | Parses Bearer tokens, hashes tokens and validates sessions |
+| `routes/auth.routes.mjs` | Login, current-user and logout endpoints |
+| `routes/health.routes.mjs` | Database connectivity endpoint |
+| `middleware/error-handler.mjs` | Invalid JSON, oversized bodies and generic server errors |
+| `passwords.mjs` | Salted scrypt password hashing and timing-safe verification |
+| `seed-user.mjs` | Creates a local test account |
 
-```sh
-npm ci
-npm run migrate -- up
-npm run dev
+`createApp({ pool })` is asynchronous because authentication setup derives a dummy password hash. JSON bodies are limited to 10 KB. CORS permits `WEB_ORIGIN`, defaulting to `http://localhost:8081`; it does not authenticate requests.
+
+## Endpoint contracts
+
+All paths below are relative to the configured API base URL.
+
+| Method and path | Request | Response |
+| --- | --- | --- |
+| `GET /health` | No credentials | 200 `{ status: "ok", database: "connected" }`; 503 when the DB query fails |
+| `POST /auth/login` | JSON `{ email, password }` | Token, expiry and user details; 400 invalid input, 401 wrong credentials, 429 throttled |
+| `GET /auth/me` | Authorization Bearer token | 200 `{ user: { id, email, name, username } }`; 401 for invalid/expired sessions or a missing account |
+| `POST /auth/logout` | Authorization Bearer token | 204 after deleting the matching token hash; 401 for a missing/malformed token |
+
+Login and current-user responses both include `id`, `email`, `name` and `username`. Middleware selects ID/email to authenticate the session; `/auth/me` then queries all four account fields with `WHERE id = $1` and `[req.user.id]`. It returns the first row under `user`, not pg query metadata. See [account fields](login.md#account-fields).
+
+Database errors reach the Express error handler as 500 responses. Invalid JSON returns 400 and oversized JSON returns 413. SQL errors are not returned directly to the client. See [Express async error handling](https://expressjs.com/en/guide/error-handling/).
+
+## Sessions and middleware
+
+Login creates a random 32-byte token encoded as 64 hexadecimal characters, with a seven-day expiry. The device stores the raw token in native SecureStore. PostgreSQL stores its SHA-256 hash. Passwords use the separate salted `scrypt-v1` format.
+
+`requireAuth` reads `Authorization: Bearer <token>`, checks its format, hashes it and joins sessions to users. The query requires `expires_at > NOW()`. A valid match becomes `req.user`; its identifier is `req.user.id`. Missing, revoked, unknown or expired sessions receive 401. Protected responses set `Cache-Control: no-store`.
+
+The login limit is five unsuccessful requests per IP within fifteen minutes, with successful requests skipped. It uses the limiter's default in-memory store. Login removes that user's expired sessions; logout deletes the supplied session hash. A well-formed already-absent logout token still returns 204.
+
+## Add private feature endpoints
+
+Mount a future private feature router with authentication before its handlers:
+
+```js
+app.use("/example", requireAuth, exampleRouter);
 ```
 
-Both scripts read `backend/.env`. The runtime creates `new pg.Pool()` without a connection string, using PostgreSQL settings such as `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`. The migration CLI also accepts `DATABASE_URL`; ensure migration and runtime settings target the same database. A `DATABASE_URL` alone is not explicitly passed to the application's pool.
+This is an extension pattern; `/example` does not currently exist. Put registration after JSON middleware and before `app.use(errorHandler)`. Alternatively, apply `requireAuth` to individual handlers in a mixed-access router, as `/auth/me` does.
 
-`PORT` defaults to `3000`; the server listens on all network interfaces. `WEB_ORIGIN` controls CORS and defaults to `http://localhost:8081`. Keep real environment values out of source control and documentation.
+Use parameterized SQL and authenticated `req.user.id` when selecting or modifying user-owned rows. Never accept a client-supplied user ID as the sole ownership check. There is no role/permission model or meal-data API yet.
 
-## Endpoints
+## Run and verify
 
-| Method and path | Behavior |
-| --- | --- |
-| `GET /health` | Checks the database connection; returns 200 or 503 |
-| `POST /auth/login` | Accepts JSON email/password; returns token, expiry, and user |
-| `GET /auth/me` | Returns the user for a valid bearer token |
-| `POST /auth/logout` | Deletes the supplied token's session and returns 204 |
-
-Send `Authorization: Bearer <token>`. Sessions expire after seven days. The database stores SHA-256 token hashes and scrypt password hashes. Failed logins are limited to five per 15-minute window; successful attempts do not count. No signup or meal API is implemented.
-
-## Existing limitation
-
-Migrations create `public.users` and `public.sessions`. Users require `name`, `username`, `email`, and `password_hash`. `seed-user.mjs` inserts only email and password hash, so it fails against this schema. Update the seed or implement account creation before testing login. Its password check also accepts eight characters while its error message says fifteen.
-
-The existing backend has not been connected to or validated as part of this UI template.
+From `backend/`, run `npm run dev`. Check `/health` from a separate terminal, then follow the [login checklist](login.md#manual-verification). [Backend syntax checks](troubleshooting.md#verification-commands) validate parsing but do not prove SQL or authentication behavior.

@@ -15,9 +15,12 @@ const pool = new pg.Pool({ connectionTimeoutMillis: 5000 });
 try {
   const passwordHash = await hashPassword(password);
   const result = await pool.query(
-    `INSERT INTO public.users (email, password_hash)
-     VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id`,
-    [email, passwordHash],
+    `INSERT INTO public.users
+      (name, username, email, password_hash)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT DO NOTHING
+    RETURNING id`,
+    ["Test User", "testuser", email, passwordHash],
   );
   console.log(result.rowCount ? "Test account created." : "Account already exists; password unchanged.");
 } finally {

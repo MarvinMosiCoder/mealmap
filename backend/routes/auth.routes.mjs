@@ -48,7 +48,7 @@ export async function createAuthRouter({ pool, requireAuth }) {
     const email = emailInput.trim().toLowerCase();
 
     const result = await pool.query(
-      `SELECT id::text, email, password_hash
+      `SELECT id::text, email, name, username, password_hash
        FROM public.users
        WHERE LOWER(email) = $1
        LIMIT 1`,
@@ -95,14 +95,29 @@ export async function createAuthRouter({ pool, requireAuth }) {
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
+        username: user.username,
       },
     });
   });
 
-  router.get("/me", requireAuth, (req, res) => {
-    res.json({
-      user: req.user,
-    });
+  router.get("/me", requireAuth, async (req, res) => {
+    const result = await pool.query(
+      `SELECT id::text, email, name, username
+      FROM public.users
+      WHERE id = $1`,
+      [req.user.id],
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Please sign in again.",
+      });
+    }
+
+    return res.json({ user });
   });
 
   router.post("/logout", async (req, res) => {
