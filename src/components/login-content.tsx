@@ -103,7 +103,7 @@ export function LoginContent() {
                 accessible={false}
               />
               <Text
-                className="shrink font-poppins-semibold text-[21px] mt-[5px] tracking-[-0.7px]"
+                className="shrink font-poppins-semibold text-[21px] mt-[4px] tracking-[-1px]"
                 style={{ color: theme.text }}
                 numberOfLines={1}
                 adjustsFontSizeToFit
