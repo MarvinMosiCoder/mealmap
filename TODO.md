@@ -1,6 +1,6 @@
 # MealMap development checklist
 
-Roadmap based on the product direction confirmed on October 15, 2026. Check a task when its implementation is complete and its behavior has been verified. Items already checked below identify the existing foundation; feature acceptance checks remain separate.
+Roadmap based on the product direction confirmed on October 15, 2026, with source status updated on October 20, 2026. Checked implementation items identify work present in the source and reviewed through source, type/syntax or isolated API/logic checks. Full device and live-database acceptance remains separate; use the linked verification checklists.
 
 ## Product goal
 
@@ -17,27 +17,33 @@ Users can also generate suggested recipes from either available ingredients or a
 - [x] Build Profile, meal-category browsing and the updated login UI.
 - [x] Add setup, authentication, navigation, database and troubleshooting documentation.
 
-Home nutrition values and meal lists are currently sample data. Calorie logging, photo analysis, recipe generation and persistence for these features have not been implemented.
+Manual meal creation and paginated meal history now use PostgreSQL. Home nutrition values and today's meals still use sample data. Photo analysis, recipe generation and the daily-summary integration remain planned.
 
 ## 1. Finish the account foundation
 
 - [x] Return `name` and `username` consistently from both `/auth/login` and `/auth/me`. The current-user route queries all account fields using the ID supplied by session middleware.
 - [x] Display a retry state when the initial session check fails, and keep startup loading feedback visible.
-- [ ] Add an authenticated profile/preferences API for the user's daily calorie goal and timezone.
-- [ ] Add a Profile form to enter and update a daily goal in kcal; do not assign an arbitrary calorie target to every user.
-- [ ] Require authentication and enforce user ownership on every new private API query.
+- [x] Add an authenticated profile/preferences API for the user's daily calorie goal and timezone.
+- [x] Add a Profile form to enter and update a daily goal in kcal; do not assign an arbitrary calorie target to every user.
+- [x] Require authentication and enforce user ownership on every new private API query.
+
+Status on October 20, 2026: preferences GET/PATCH and the Profile goal/timezone form are implemented, including the native timezone picker. Preferences were checked in Postman during development; complete the separate [device verification checklist](docs/preferences.md#device-verification) for acceptance. Preference and meal-log queries use authenticated `req.user.id`; ownership remains a requirement for future private APIs.
 
 ## 2. Build manual calorie tracking first
 
-- [ ] Create a new migration for meal logs with user, meal name, meal category, serving quantity, kcal, source and eaten-at timestamp.
-- [ ] Add backend endpoints to create, list, edit and delete the signed-in user's meal logs.
-- [ ] Build an Add meal screen with name, breakfast/lunch/dinner/snacks, portion, calories and meal date/time.
-- [ ] Validate required fields, positive portions and nonnegative calorie values; clearly distinguish calories per serving from calories for the logged portion.
+- [x] Create a new migration for meal logs with user, meal name, meal category, serving quantity, kcal, source and eaten-at timestamp.
+- [x] Add backend endpoints to create, list, edit and delete the signed-in user's meal logs.
+- [x] Build a protected Add meal screen with name, breakfast/lunch/dinner/snacks, portion, total calories, native meal date/time and Save feedback.
+- [x] Validate required fields, positive portions and nonnegative calorie values; clearly distinguish calories per serving from calories for the logged portion.
+- [x] Display persisted meal history with focus refresh, pull-to-refresh, pagination and loading/empty/error states.
+- [ ] Add calorie-goal history or daily goal snapshots before implementing historical summaries.
 - [ ] Add a daily-summary API that calculates consumed and remaining calories from confirmed meal logs.
 - [ ] Replace Home's sample calorie ring and today's meals with the signed-in user's actual data.
 - [ ] Add edit/delete actions for logged meals and recalculate totals after each change.
 - [ ] Support viewing past days and preserve their entries when a new day begins in the user's timezone.
 - [ ] Show clear empty, loading and error states, plus an over-goal state when consumed calories exceed the goal.
+
+Current scope: the API supports POST/GET/PUT/DELETE; mobile screens support creation and paginated history. Mobile edit/delete controls, selected-day filtering and over-goal presentation remain open. Entry/history display uses the device timezone; the saved Profile timezone does not yet drive diary-day boundaries. See [meal-log contracts and acceptance checks](docs/meal-logs.md). The form's local save lock prevents repeat taps and re-saving after confirmed success, but server idempotency for lost-response retries remains pending.
 
 **Daily calculation**
 
@@ -95,7 +101,7 @@ Confirmed scope: support **both** available ingredients and a meal name/photo.
 
 ## 6. Connect Meals, Plan and Groceries
 
-- [ ] Replace the Meals placeholder with saved recipes and meal history, with category/search filters.
+- [ ] Extend the implemented Meals history with saved recipes and category/search filters.
 - [ ] Replace the Plan placeholder with a weekly calendar where saved recipes can be assigned to dates and meal categories.
 - [ ] Add a Log as eaten action that asks for the actual portion and date before updating calories.
 - [ ] Build Groceries from selected planned recipes; combine compatible quantities and allow manual items and checkboxes.
@@ -118,8 +124,8 @@ Planned meals and generated recipes remain separate from the food diary until th
 
 ## Suggested implementation order
 
-1. Save a daily calorie goal and timezone through authenticated profile/preferences APIs.
-2. Complete manual logging and the live daily summary.
+1. Finish device verification of the implemented goal/timezone Profile form and API.
+2. Verify manual creation/history on devices, add mobile edit/delete actions, then implement goal history and the live daily summary.
 3. Add photo capture/upload, estimation and confirmation.
 4. Add recipe generation for both input flows.
 5. Connect saved recipes, weekly planning and groceries.

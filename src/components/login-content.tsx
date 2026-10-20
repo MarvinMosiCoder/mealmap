@@ -109,7 +109,7 @@ export function LoginContent() {
                 adjustsFontSizeToFit
                 accessibilityLabel="MealMap"
               >
-                Meal<Text style={{ color: theme.primary }}>Map</Text>
+                Nutrees<Text style={{ color: theme.primary }}>ion</Text>
               </Text>
             </View>
             <View className="w-[44px]" />

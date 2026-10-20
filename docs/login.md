@@ -8,11 +8,14 @@ The native app uses email/password login backed by PostgreSQL sessions. Home is 
 | --- | --- |
 | `src/app/login.tsx` | Login route entry; renders `LoginContent` |
 | `src/components/login-content.tsx` | Form, input focus styles, password visibility, submit state and feedback |
-| `src/lib/auth.ts` | HTTP requests, native token storage and the `AuthUser` type |
+| `src/lib/auth.ts` | HTTP requests, native token storage, `AuthUser`, exported `ApiError` and `authenticatedRequest()` |
+| `src/lib/preferences.ts` | Preference types and authenticated GET/PATCH client functions |
+| `src/lib/meal-logs.ts` | Typed authenticated create/list/update/delete helpers |
+| `src/components/profile-preferences-form.tsx` | Preference loading/retry, editing, Save and feedback |
 | `src/providers/auth-provider.tsx` | Shared user state, startup/resume checks, sign-in and sign-out |
-| `src/app/_layout.tsx` | Font/splash startup, session loading/retry and the Login route guard |
+| `src/app/_layout.tsx` | Font/splash startup, session loading/retry, signed-out Login and signed-in Add meal guards |
 | `src/app/(tabs)/_layout.tsx` | Private tab guards and bar visibility |
-| `src/app/(tabs)/profile.tsx` | Account display, shortcuts and logout |
+| `src/app/(tabs)/profile.tsx` | Account display, preferences, shortcuts and save/logout coordination |
 | `backend/routes/auth.routes.mjs` | Login, current-user and logout handlers |
 | `backend/auth-middleware.mjs` | Validates sessions and populates `req.user` |
 
@@ -75,7 +78,13 @@ It returns `{ user: result.rows[0] }`, or 401 if that account no longer exists. 
 
 Profile displays `user.name` and `user.email`; its initials derive from up to two name words with an email fallback. It does not currently render the username, although `user.username` is available from both account endpoints.
 
+The embedded [preferences form](preferences.md#profile-form-behavior) uses the same native session token through `authenticatedRequest()`. It loads/saves the goal and timezone separately from `AuthUser`. The helper throws `ApiError` with status 401 for a missing token and preserves error statuses from the server; a preferences 401 asks AuthProvider to `refreshSession(false)`. Token removal and user-state changes still happen through the existing session-restoration flow.
+
+The [meal-log form and history](meal-logs.md#mobile-creation-and-history) reuse that helper and request a session refresh on 401. Add meal has its own authenticated root-stack guard; Meals remains a private tab and keys its list by account ID. The HTTP helper handles a successful 204 before attempting JSON parsing, which supports logout and meal deletion.
+
 The Profile handler awaits `signOut()`, then calls `router.replace("/login")`. Sign-out calls the API, removes the token and clears provider state; private tab guards remove authenticated screens. The explicit replacement selects Login as the logout destination. The button disables repeated requests, displays a spinner and renders failures. A network/server failure keeps the local session so the user can retry; a logout 401 permits local cleanup.
+
+Logout is also disabled and guarded while a preference save is pending. The form reports saving through `onSavingChange` and is disabled while logout is pending.
 
 SecureStore is the native storage implementation. Its existing key is `chartineer.session`; changing that key requires deliberate session migration or a new login. Browser authentication needs a separate implementation. See [SDK 55 SecureStore](https://docs.expo.dev/versions/v55.0.0/sdk/securestore/).
 
@@ -88,10 +97,11 @@ SecureStore is the native storage implementation. Its existing key is `chartinee
 | Restore API access and tap Try again | Spinner while retrying, then the appropriate authenticated/guest routes |
 | Submit empty or incorrect credentials | Visible error; no authenticated navigation |
 | Sign in with the seeded account | Home shows nutrition/meals and the tab bar |
-| Open Profile | Name/email, initials, shortcuts and logout |
+| Open Profile | Name/email, initials, goal/timezone preferences, shortcuts and logout |
+| Save preferences | Feedback appears; Logout is disabled during the save. Complete the [device checklist](preferences.md#device-verification) for persistence and error paths |
 | Fully reopen the app or background/resume | Session is checked; name and username remain in the restored account |
 | Log out from Profile | Login opens and private tabs are removed |
 | Follow a private route while signed out | Private screen remains unavailable; public Home is the guard fallback |
 | Restore an expired or revoked token | Account is cleared after the API returns 401 |
 
-Google/Apple login, registration, password reset and profile editing are not implemented. The social buttons display an availability notice directing users to email/password login.
+Google/Apple login, registration, password reset and editing name/email/username are not implemented. Goal/timezone editing is available through Profile preferences. The social buttons display an availability notice directing users to email/password login.

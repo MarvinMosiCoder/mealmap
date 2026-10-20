@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { ProfilePreferencesForm } from "@/components/profile-preferences-form";
 const shortcuts = [
   {
     href: "/plan",
@@ -38,9 +39,10 @@ export default function ProfileScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const logoutPending = useRef(false);
   const tabBarHeight = useBottomTabBarHeight();
+  const [savingPreferences, setSavingPreferences] = useState(false);
 
   async function handleLogout() {
-    if (logoutPending.current) return;
+    if (logoutPending.current || savingPreferences) return;
 
     logoutPending.current = true;
     setLoggingOut(true);
@@ -84,6 +86,8 @@ export default function ProfileScreen() {
         contentContainerStyle={{
           paddingBottom: tabBarHeight + 24,
         }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         <View className="mb-[24px] flex-row items-center justify-between gap-[16px]">
           <View className="flex-1">
@@ -121,6 +125,12 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
+
+        <ProfilePreferencesForm
+          key={user.id}
+          disabled={loggingOut}
+          onSavingChange={setSavingPreferences}
+        />
 
         <Text className="mb-[12px] mt-[28px] font-poppins-bold text-[16px] text-text" accessibilityRole="header">
           Your kitchen
@@ -171,10 +181,10 @@ export default function ProfileScreen() {
 
         <Pressable
           onPress={handleLogout}
-          disabled={loggingOut}
+          disabled={loggingOut || savingPreferences}
           accessibilityRole="button"
           accessibilityLabel={loggingOut ? "Logging out" : "Log out"}
-          accessibilityState={{ disabled: loggingOut, busy: loggingOut }}
+          accessibilityState={{ disabled: loggingOut || savingPreferences, busy: loggingOut }}
           className={`mt-[24px] min-h-[54px] flex-row items-center justify-center gap-[10px] rounded-[18px] border border-[#F0DAD7] bg-[#FFF4F1] px-[20px] py-[14px] active:opacity-70 ${loggingOut ? "opacity-60" : ""}`}
         >
           {loggingOut ? (

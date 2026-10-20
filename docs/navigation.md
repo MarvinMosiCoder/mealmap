@@ -10,18 +10,25 @@ MealMap uses Expo Router from `src/app/`. Route group `(tabs)` organizes files w
 | `/login` | `login.tsx` | Signed-out users |
 | `/meal-category/[category]` | `meal-category/[category].tsx` | Public category inspiration; breakfast, lunch, dinner or snacks |
 | `/meals` | `(tabs)/meals.tsx` | Authenticated users |
+| `/add-meal` | `add-meal.tsx` | Authenticated users; native header, outside the tab navigator |
 | `/plan` | `(tabs)/plan.tsx` | Authenticated users |
 | `/groceries` | `(tabs)/groceries.tsx` | Authenticated users |
 | `/profile` | `(tabs)/profile.tsx` | Authenticated users |
 
 ## Root guard
 
-`RootLayout` loads fonts before mounting AuthProvider and `RootNavigator`. The child reads the shared session and displays a spinner while it is checked. An error with no user displays the retry screen; Try again calls `refreshSession()`. Once ready, it registers public `(tabs)` and the public category route, and protects Login with `guard={!user}`. See [startup loading and retry](login.md#startup-loading-and-retry).
+`RootLayout` loads fonts before mounting AuthProvider and `RootNavigator`. The child reads the shared session and displays a spinner while it is checked. An error with no user displays the retry screen; Try again calls `refreshSession()`. Once ready, it registers public `(tabs)` and the public category route, Add meal under `guard={!!user}`, and Login under `guard={!user}`. See [startup loading and retry](login.md#startup-loading-and-retry).
 
 ```tsx
 <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false }}>
   <Stack.Screen name="(tabs)" />
   <Stack.Screen name="meal-category/[category]" />
+  <Stack.Protected guard={!!user}>
+    <Stack.Screen
+      name="add-meal"
+      options={{ headerShown: true, title: "Add meal" }}
+    />
+  </Stack.Protected>
   <Stack.Protected guard={!user}>
     <Stack.Screen name="login" />
   </Stack.Protected>
@@ -38,7 +45,17 @@ The separate style `display: user ? "flex" : "none"` hides the whole tab bar for
 
 On logout, `user` becomes `null` and private tabs are removed. Profile's handler explicitly calls `router.replace("/login")` after awaiting `signOut()`, selecting Login as the destination. Home remains available to guests. Profile also has a defensive signed-out `<Redirect href="/login" />`; the handler's explicit navigation expresses the desired logout destination.
 
-The bar uses absolute positioning and a transparent background around the raised Home button. Its lower background panel starts 32 pixels down. Home and Profile account for the overlay with `useBottomTabBarHeight()` and bottom scroll padding. See [tab spacing](mobile-ui.md#tabs-and-safe-areas) before adding another scrollable tab.
+The bar uses absolute positioning and a transparent background around the raised Home button. Its lower background panel starts 32 pixels down. Home, Profile and the Meals FlatList account for the overlay with `useBottomTabBarHeight()` and bottom scroll padding. See [tab spacing](mobile-ui.md#tabs-and-safe-areas) before adding another scrollable tab.
+
+The preferences form is embedded in `/profile`; it adds no mobile route. Its `/profile/preferences` path is an Express API endpoint. A preference 401 triggers `refreshSession(false)`, and existing guards respond if AuthProvider clears the session. Only deliberate logout explicitly selects `/login`. Profile also guards Logout while preferences are saving; see [preferences](preferences.md#profile-form-behavior).
+
+## Meal entry and history
+
+Meals links to `/add-meal` through `Link asChild` around a Pressable. Add meal belongs to the root authenticated stack, not the signed-out Login group. Its native header provides Back, it has no tab bar, and its safe area covers left/right/bottom while the header handles the top.
+
+A successful Save stays on the form with `Meal saved.` and locked inputs; it does not navigate automatically. Back returns to the previous route, normally Meals. `MealLogList` uses `useFocusEffect` to reload the first page when Meals regains focus, and exposes pull-to-refresh and Load more. The parent keys the list by account ID to reset local data when accounts change. See [meal logs](meal-logs.md#mobile-creation-and-history).
+
+Both the form and list request `refreshSession(false)` on a current request's 401. The root guard removes Add meal and private tabs when the session is cleared. Backend `/meal-logs` paths are API endpoints; they are not Expo screen routes. There are no mobile edit/detail routes yet.
 
 ## Category browsing
 

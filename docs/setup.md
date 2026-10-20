@@ -1,6 +1,6 @@
 # Setup and daily development
 
-MealMap has two npm packages: the Expo application at the project root and the Express API in `backend/`. This guide reflects the source reviewed on October 15, 2026. Start with the [documentation index](../README.md) for other topics.
+MealMap has two npm packages: the Expo application at the project root and the Express API in `backend/`. This guide reflects the source reviewed on October 20, 2026. Start with the [documentation index](../README.md) for other topics.
 
 ## Prerequisites
 
@@ -27,6 +27,8 @@ npm ci
 ```
 
 Both packages have their own `package-lock.json`. Install new mobile packages with `npx expo install <package>` at the root. Server dependencies belong in `backend/`.
+
+The root lockfile includes `@react-native-picker/picker` 2.11.4 for category/timezone selection and `@react-native-community/datetimepicker` 8.6.0 for Android/iOS meal date/time selection. `npm ci` installs them; there is no separate feature-install step for this checkout. The datetimepicker plugin is registered in `app.json`. Both modules are bundled in compatible Expo Go; rebuild custom development clients after native dependency/configuration changes. See [SDK 55 Picker](https://docs.expo.dev/versions/v55.0.0/sdk/picker/) and [DateTimePicker](https://docs.expo.dev/versions/v55.0.0/sdk/date-time-picker/).
 
 ## Database and server environment
 
@@ -84,6 +86,8 @@ From `backend/`:
 npm run migrate -- up
 ```
 
+The four current migrations create users and sessions, add nullable calorie goal/timezone columns, then create `public.meal_logs`. Existing installations need to apply both `1792461599770_add-user-preferences.sql` and `1792473191029_create-meal-logs.sql` if pending. New accounts have no assigned goal or timezone, and migrations do not create meals. See [migration history](migrations.md#current-schema).
+
 Create a test account using [the seed instructions](login.md#create-a-test-account), then start the API:
 
 ```powershell
@@ -105,6 +109,8 @@ npx expo start
 ```
 
 Press `a` after the emulator finishes booting. Keep both servers running. Daily development only needs these two startup commands after initial setup; apply new migrations when they are added.
+
+After signing in, open Profile to load and save a goal and timezone, then Meals > Add meal to log a portion and its total kcal. Save shows confirmation on the form; use Back to return to the refreshed history. Follow [preferences verification](preferences.md#device-verification) and [meal-log verification](meal-logs.md#device-verification) for persistence, errors, native pickers and keyboard behavior. Home's nutrition summary is still sample data.
 
 ## Checks
 

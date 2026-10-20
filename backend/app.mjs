@@ -4,6 +4,8 @@ import { createRequireAuth } from "./auth-middleware.mjs";
 import { errorHandler } from "./middleware/error-handler.mjs";
 import { createAuthRouter } from "./routes/auth.routes.mjs";
 import { createHealthRouter } from "./routes/health.routes.mjs";
+import { createProfileRouter } from "./routes/profile.routes.mjs";
+import { createMealLogsRouter } from "./routes/meal-logs.routes.mjs";
 
 export async function createApp({ pool }) {
   const app = express();
@@ -27,7 +29,8 @@ export async function createApp({ pool }) {
   });
 
   app.use("/auth", authRouter);
-
+  app.use("/profile", createProfileRouter({ pool, requireAuth }));
+  app.use("/meal-logs", createMealLogsRouter({ pool, requireAuth }));
   // Register the error handler after all routers.
   app.use(errorHandler);
 

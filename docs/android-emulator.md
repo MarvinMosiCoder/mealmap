@@ -47,4 +47,4 @@ Avoid Wipe Data as a routine recovery step: it clears emulator data and saved ap
 
 ## What to inspect
 
-Use the [login checklist](login.md#manual-verification) on the actual device. Check the raised Home button, safe-area spacing, long account names/emails, password keyboard behavior and whether logout can be reached by scrolling. Current app configuration requests a light interface; dark-mode testing needs an intentional configuration change first.
+Use the [login checklist](login.md#manual-verification), [preferences checklist](preferences.md#device-verification) and [meal-log checklist](meal-logs.md#device-verification) on the actual device. Check the raised Home button, safe-area spacing, long account names/emails, password keyboard behavior and whether logout and the final meal card can be reached above the tab bar. Exercise the timezone dropdown, date/time picker selection and cancellation, meal saving, and history refresh after returning from Add meal. Current app configuration requests a light interface; dark-mode testing needs an intentional configuration change first.

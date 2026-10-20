@@ -11,7 +11,7 @@ export type AuthUser = {
 };
 type LoginResponse = { token: string; expiresAt: string; user: AuthUser };
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(message: string, public status: number) {
     super(message);
     this.name = "ApiError";
@@ -50,6 +50,22 @@ async function request<T>(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function authenticatedRequest<T>(
+  path: string,
+  options: { method?: string; body?: object } = {},
+): Promise<T> {
+  const token = await SecureStore.getItemAsync(sessionKey);
+
+  if (!token) {
+    throw new ApiError("Please sign in again.", 401);
+  }
+
+  return request<T>(path, {
+    ...options,
+    token,
+  });
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {

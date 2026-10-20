@@ -3,7 +3,6 @@ import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold, Poppins_800Ex
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { 
   ActivityIndicator,
@@ -95,6 +94,15 @@ function RootNavigator() {
           title: "Explore meals",
         }}
       />
+      <Stack.Protected guard={!!user}>
+        <Stack.Screen
+          name="add-meal"
+          options={{
+            headerShown: true,
+            title: "Add meal",
+          }}
+        />
+      </Stack.Protected>
       <Stack.Protected guard={!user}>
         <Stack.Screen name="login" />
       </Stack.Protected>
