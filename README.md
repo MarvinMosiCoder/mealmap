@@ -1,6 +1,6 @@
 # MealMap
 
-Expo SDK 55 / React Native meal-tracking and planning application with NativeWind styling, an Express 5 API and PostgreSQL persistence. Documentation reflects the source reviewed on October 20, 2026.
+Expo SDK 55 / React Native meal-tracking and planning application with NativeWind styling, an Express 5 API and PostgreSQL persistence. Calorie-goal history, daily summaries and Home's live calorie ring were reviewed on October 22, 2026; the remaining foundation was reviewed on October 20, 2026.
 
 ## Documentation
 
@@ -11,6 +11,7 @@ Expo SDK 55 / React Native meal-tracking and planning application with NativeWin
 | [Mobile screens and styling](docs/mobile-ui.md) | Home, categories, Login, Profile, meal forms/history, floating tabs and theme |
 | [Login and saved sessions](docs/login.md) | Test accounts, account fields, startup loading/retry, token storage and logout |
 | [Profile preferences](docs/preferences.md) | Calorie goal and timezone storage, authenticated GET/PATCH, Profile loading/Save and verification |
+| [Daily summaries and Home](docs/daily-summary.md) | API contract, today's date, Profile timezone, live calorie ring, refresh behavior and verification |
 | [Manual meal logs](docs/meal-logs.md) | Schema, authenticated CRUD, Add meal, native date/time selection, paginated history and verification |
 | [Navigation guards](docs/navigation.md) | Public routes, private tabs/Add meal, category links and login/logout destinations |
 | [Backend architecture](docs/backend.md) | Module responsibilities, endpoint contracts and private APIs |
@@ -45,11 +46,17 @@ Home at `/` is public and hides the tab bar for guests. Guests can browse Breakf
 
 Profile loads preferences through authenticated `GET /profile/preferences` and saves them with PATCH. Both values start unset; a blank goal or the timezone picker's Not set option clears the corresponding value. The form includes loading/retry, validation, save feedback and a logout lock while saving. Preferences are stored on the authenticated user's row in PostgreSQL; see [Profile preferences](docs/preferences.md).
 
+Calorie-goal changes are recorded in `public.calorie_goal_history` in the same transaction as the current preference update. Saving an unchanged goal or changing only timezone adds no history; clearing a set goal records `NULL`. Apply `1792648862272_create-calorie-goal-history.sql` before using the updated preference-save handler. Existing goals are captured from migration time onward; earlier goals are unknown. See [calorie-goal history](docs/preferences.md#calorie-goal-history).
+
+Authenticated `GET /daily-summary?date=YYYY-MM-DD` returns consumed calories, meal count, the applicable recorded goal, remaining calories and over-goal status. It uses the current saved Profile timezone for every date and the latest goal recorded before the next local midnight. Changing timezone can regroup past meals and change which recorded goal applies. An unset timezone returns 409; an unset or unknown goal keeps remaining calories and over-goal status `null`. See [daily summaries](docs/daily-summary.md).
+
+Signed-in Home now loads today's summary from the API. The client derives today's date from the current device clock in the saved Profile timezone. Its calorie ring shows consumed calories, the recorded goal, remaining or over-goal calories, meal count, date and timezone. Loading/retry and unset timezone/goal states include the relevant Profile action. Home reloads on focus, on return to the foreground while focused and just after the returned day's end; obsolete responses are ignored. Returning Home after a saved meal or preference change fetches the updated totals.
+
 Meals displays the signed-in user's persisted meal logs, with focus/pull-to-refresh, loading/empty/error states and Load more pagination. Meals > Add meal opens the protected `/add-meal` screen for name, category, servings, total kcal and date/time. Successful Save locks that form; use Back to return to the refreshed list. Entry/display times use the device timezone and the API receives UTC. The backend supports POST/GET/PUT/DELETE with ownership checks; mobile edit/delete actions remain pending. Apply all migrations, including `1792473191029_create-meal-logs.sql`. See [manual meal logs](docs/meal-logs.md).
 
 Startup keeps the splash visible while fonts load, then shows a session-check spinner. A failed initial session check displays the error and a Try again button. The tab bar overlays authenticated screens with a transparent upper area around the raised Home button; Home, Profile and meal history include bottom scroll padding.
 
-Home's calorie ring, macros, today's meals and category ideas remain sample data. A daily-summary API, goal history and Home integration are not implemented, so logging a meal does not change Home's displayed calories. Plan and Groceries remain placeholders. Registration, provider login, password reset, editing account identity fields and browser session storage are not implemented.
+Home's featured dinner, today's meal cards and category ideas remain sample data. The live calorie card replaces the old sample macro display; macro totals are not implemented. The sample meal cards can differ from the live meal count. Past-day controls, mobile edit/delete actions, Plan and Groceries remain pending. Registration, provider login, password reset, editing account identity fields and browser session storage are not implemented.
 
 Both `/auth/login` and `/auth/me` return `id`, `email`, `name` and `username`. The current-user route uses the authenticated ID to query the full account details, so restoring a session retains the profile name. See the [account response contract](docs/login.md#account-fields) and [known limitations](docs/troubleshooting.md#known-limitations).
 
@@ -62,6 +69,6 @@ npx expo lint
 npx tsc --noEmit
 ```
 
-Also run the [backend syntax checks](docs/troubleshooting.md#verification-commands). These checks do not validate SQL execution or device behavior; use the [manual login checklist](docs/login.md#manual-verification), [preferences verification](docs/preferences.md#device-verification) and [meal-log checks](docs/meal-logs.md#device-verification).
+Also run the [backend syntax checks](docs/troubleshooting.md#verification-commands). These checks do not validate SQL execution or device behavior; use the [manual login checklist](docs/login.md#manual-verification), [preferences verification](docs/preferences.md#device-verification), [meal-log checks](docs/meal-logs.md#device-verification) and [Home summary checklist](docs/daily-summary.md#device-verification).
 
 Use `npx expo install <package>` for mobile dependencies. Read [AGENTS.md](AGENTS.md) and the [SDK 55 docs](https://docs.expo.dev/versions/v55.0.0/) before changing Expo APIs.

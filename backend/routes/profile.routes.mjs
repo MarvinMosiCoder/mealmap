@@ -92,29 +92,67 @@ export function createProfileRouter({pool, requireAuth}){
             }
         }
 
-        const result = await pool.query(
-            `UPDATE public.users
-            SET
-                daily_calorie_goal_kcal = CASE
-                    WHEN $2::boolean THEN $3::integer
-                    ELSE daily_calorie_goal_kcal
-                END,
-                timezone = CASE
-                    WHEN $4::boolean THEN $5::text
-                    ELSE timezone
-                END
-            WHERE id = $1
-            RETURNING
-                daily_calorie_goal_kcal AS "dailyCalorieGoalKcal",
-                timezone`,
-            [req.user.id, hasGoal, goal, hasTimezone, timezone],
-        );
-        const preferences = result.rows[0];
+        const client = await pool.connect();
+        let preferences;
 
-        if (!preferences) {
-            return res.status(401).json({
-            message: "Please sign in again.",
-            });
+        try {
+            await client.query("BEGIN");
+
+            const currentResult = await client.query(
+                `SELECT daily_calorie_goal_kcal AS "dailyCalorieGoalKcal"
+                FROM public.users
+                WHERE id = $1
+                FOR UPDATE`,
+                [req.user.id],
+            );
+            const current = currentResult.rows[0];
+
+            if (!current) {
+                await client.query("ROLLBACK");
+                return res.status(401).json({
+                    message: "Please sign in again.",
+                });
+            }
+
+            const result = await client.query(
+                `UPDATE public.users
+                SET
+                    daily_calorie_goal_kcal = CASE
+                        WHEN $2::boolean THEN $3::integer
+                        ELSE daily_calorie_goal_kcal
+                    END,
+                    timezone = CASE
+                        WHEN $4::boolean THEN $5::text
+                        ELSE timezone
+                    END
+                WHERE id = $1
+                RETURNING
+                    daily_calorie_goal_kcal AS "dailyCalorieGoalKcal",
+                    timezone`,
+                [req.user.id, hasGoal, goal, hasTimezone, timezone],
+            );
+            preferences = result.rows[0];
+
+            if (
+                hasGoal &&
+                current.dailyCalorieGoalKcal !== preferences.dailyCalorieGoalKcal
+            ) {
+                await client.query(
+                    `INSERT INTO public.calorie_goal_history (
+                        user_id,
+                        daily_calorie_goal_kcal
+                    )
+                    VALUES ($1, $2)`,
+                    [req.user.id, preferences.dailyCalorieGoalKcal],
+                );
+            }
+
+            await client.query("COMMIT");
+        } catch (error) {
+            await client.query("ROLLBACK");
+            throw error;
+        } finally {
+            client.release();
         }
 
         return res.json({ preferences });

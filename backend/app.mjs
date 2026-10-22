@@ -6,6 +6,7 @@ import { createAuthRouter } from "./routes/auth.routes.mjs";
 import { createHealthRouter } from "./routes/health.routes.mjs";
 import { createProfileRouter } from "./routes/profile.routes.mjs";
 import { createMealLogsRouter } from "./routes/meal-logs.routes.mjs";
+import { createDailySummaryRouter } from "./routes/daily-summary.routes.mjs";
 
 export async function createApp({ pool }) {
   const app = express();
@@ -31,6 +32,10 @@ export async function createApp({ pool }) {
   app.use("/auth", authRouter);
   app.use("/profile", createProfileRouter({ pool, requireAuth }));
   app.use("/meal-logs", createMealLogsRouter({ pool, requireAuth }));
+  app.use(
+      "/daily-summary",
+      createDailySummaryRouter({ pool, requireAuth }),
+  );
   // Register the error handler after all routers.
   app.use(errorHandler);
 

@@ -1,6 +1,5 @@
 import { useAuth } from "@/providers/auth-provider";
 import { FeaturedMealCard } from "@/components/featured-meal-card";
-import { NutritionSummary } from "@/components/nutrition-summary";
 import { TodaysMeals } from "@/components/todays-meals";
 import { ExploreByMeal } from "@/components/explore-by-meal";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -8,6 +7,7 @@ import { Link, router } from "expo-router";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { HomeDailySummary } from "@/components/home-daily-summary";
 
 export default function IndexScreen() {
   const { user } = useAuth();
@@ -81,7 +81,7 @@ export default function IndexScreen() {
         {
           user ? (
             <>
-              <NutritionSummary />
+              <HomeDailySummary key={user.id} />
               <TodaysMeals />
             </>
           ) : (

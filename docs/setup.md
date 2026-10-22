@@ -1,6 +1,6 @@
 # Setup and daily development
 
-MealMap has two npm packages: the Expo application at the project root and the Express API in `backend/`. This guide reflects the source reviewed on October 20, 2026. Start with the [documentation index](../README.md) for other topics.
+MealMap has two npm packages: the Expo application at the project root and the Express API in `backend/`. The setup foundation was reviewed on October 20, 2026; goal-history migration and Home summary guidance were updated on October 22, 2026. Start with the [documentation index](../README.md) for other topics.
 
 ## Prerequisites
 
@@ -86,7 +86,7 @@ From `backend/`:
 npm run migrate -- up
 ```
 
-The four current migrations create users and sessions, add nullable calorie goal/timezone columns, then create `public.meal_logs`. Existing installations need to apply both `1792461599770_add-user-preferences.sql` and `1792473191029_create-meal-logs.sql` if pending. New accounts have no assigned goal or timezone, and migrations do not create meals. See [migration history](migrations.md#current-schema).
+The five current migrations create users and sessions, add nullable calorie goal/timezone columns, then create `public.meal_logs` and `public.calorie_goal_history`. Existing installations need to apply `1792461599770_add-user-preferences.sql`, `1792473191029_create-meal-logs.sql` and `1792648862272_create-calorie-goal-history.sql` if pending. The updated preference-save handler requires the history table. New accounts have no assigned goal or timezone, and migrations do not create meals. The history migration captures existing accounts' current goals from migration time onward. See [migration history](migrations.md#current-schema) and [goal-history behavior](preferences.md#calorie-goal-history).
 
 Create a test account using [the seed instructions](login.md#create-a-test-account), then start the API:
 
@@ -110,7 +110,7 @@ npx expo start
 
 Press `a` after the emulator finishes booting. Keep both servers running. Daily development only needs these two startup commands after initial setup; apply new migrations when they are added.
 
-After signing in, open Profile to load and save a goal and timezone, then Meals > Add meal to log a portion and its total kcal. Save shows confirmation on the form; use Back to return to the refreshed history. Follow [preferences verification](preferences.md#device-verification) and [meal-log verification](meal-logs.md#device-verification) for persistence, errors, native pickers and keyboard behavior. Home's nutrition summary is still sample data.
+After signing in, open Profile to load and save a goal and timezone, then Meals > Add meal to log a portion and its total kcal. Save shows confirmation on the form; use Back to return to the refreshed history. Return Home to see today's live calorie ring and meal count using the saved Profile timezone. Its featured dinner and today's-meals cards remain samples. Follow [preferences verification](preferences.md#device-verification), [meal-log verification](meal-logs.md#device-verification) and [Home summary verification](daily-summary.md#device-verification) for persistence, refresh behavior, errors, native pickers and keyboard behavior.
 
 ## Checks
 

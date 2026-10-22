@@ -1,6 +1,6 @@
 # MealMap development checklist
 
-Roadmap based on the product direction confirmed on October 15, 2026, with source status updated on October 20, 2026. Checked implementation items identify work present in the source and reviewed through source, type/syntax or isolated API/logic checks. Full device and live-database acceptance remains separate; use the linked verification checklists.
+Roadmap based on the product direction confirmed on October 15, 2026, with calorie-goal history, daily-summary API and Home summary status updated on October 22, 2026; other implementation status was reviewed on October 20, 2026. Checked implementation items identify work present in the source and reviewed through source, type/syntax or isolated API/logic checks. Full device and live-database acceptance remains separate; use the linked verification checklists.
 
 ## Product goal
 
@@ -17,7 +17,7 @@ Users can also generate suggested recipes from either available ingredients or a
 - [x] Build Profile, meal-category browsing and the updated login UI.
 - [x] Add setup, authentication, navigation, database and troubleshooting documentation.
 
-Manual meal creation and paginated meal history now use PostgreSQL. Home nutrition values and today's meals still use sample data. Photo analysis, recipe generation and the daily-summary integration remain planned.
+Manual meal creation, paginated meal history and Home's calorie ring now use PostgreSQL-backed APIs. Home's featured dinner and today's meal cards still use sample data. Photo analysis, recipe generation and past-day controls remain planned.
 
 ## 1. Finish the account foundation
 
@@ -36,14 +36,19 @@ Status on October 20, 2026: preferences GET/PATCH and the Profile goal/timezone 
 - [x] Build a protected Add meal screen with name, breakfast/lunch/dinner/snacks, portion, total calories, native meal date/time and Save feedback.
 - [x] Validate required fields, positive portions and nonnegative calorie values; clearly distinguish calories per serving from calories for the logged portion.
 - [x] Display persisted meal history with focus refresh, pull-to-refresh, pagination and loading/empty/error states.
-- [ ] Add calorie-goal history or daily goal snapshots before implementing historical summaries.
-- [ ] Add a daily-summary API that calculates consumed and remaining calories from confirmed meal logs.
-- [ ] Replace Home's sample calorie ring and today's meals with the signed-in user's actual data.
+- [x] Add calorie-goal history or daily goal snapshots before implementing historical summaries.
+- [x] Add a daily-summary API that calculates consumed and remaining calories from confirmed meal logs.
+- [x] Replace Home's sample calorie ring with the signed-in user's daily summary, including focus, foreground and midnight refresh.
+- [ ] Replace Home's sample today's meals with the signed-in user's entries for that day.
 - [ ] Add edit/delete actions for logged meals and recalculate totals after each change.
 - [ ] Support viewing past days and preserve their entries when a new day begins in the user's timezone.
-- [ ] Show clear empty, loading and error states, plus an over-goal state when consumed calories exceed the goal.
+- [x] Show zero-calorie/zero-meal days, loading/retry, unset timezone/goal and over-goal states in Home's summary.
 
-Current scope: the API supports POST/GET/PUT/DELETE; mobile screens support creation and paginated history. Mobile edit/delete controls, selected-day filtering and over-goal presentation remain open. Entry/history display uses the device timezone; the saved Profile timezone does not yet drive diary-day boundaries. See [meal-log contracts and acceptance checks](docs/meal-logs.md). The form's local save lock prevents repeat taps and re-saving after confirmed success, but server idempotency for lost-response retries remains pending.
+Current scope: the API supports POST/GET/PUT/DELETE and selected-day summaries; mobile screens support creation, paginated history and today's live calorie ring with over-goal presentation. Mobile edit/delete controls, selected-day filtering and Home's live meal list remain open. Entry/history display uses the device timezone; Home and the summary API use the saved Profile timezone. See [meal-log contracts and acceptance checks](docs/meal-logs.md). The form's local save lock prevents repeat taps and re-saving after confirmed success, but server idempotency for lost-response retries remains pending.
+
+Calorie-goal history was added on October 22, 2026. The migration captures existing accounts' current goals from migration time onward; preference saves append actual goal changes, including clearing a goal, in the same transaction as the current preference update. Unchanged goals and timezone-only saves add no history. The user completed the Postman/SQL verification sequence, and a read-only database check confirmed the latest recorded goal matches the current preference. Rollback behavior was checked with a mock database. See [goal-history behavior and verification](docs/preferences.md#calorie-goal-history).
+
+The daily-summary API was implemented on October 22, 2026. The user reported completing the Postman summary checks; 16 isolated handler checks, 15 read-only PostgreSQL checks and six HTTP integration checks with fixture queries passed against the implemented route. These cover arithmetic, unset/unknown goals, midnight limits, daylight saving time, ownership and authentication. Home now uses that API; 15 isolated lifecycle checks and seven calorie-card rendering checks passed during implementation. An Android emulator check confirmed the zero-meal, unset-goal card renders after restarting Expo Go to clear a duplicate SVG registration error. Full device acceptance remains open. See [daily-summary behavior and verification](docs/daily-summary.md).
 
 **Daily calculation**
 
@@ -52,7 +57,7 @@ Consumed kcal = sum of confirmed meal entries for the selected local day
 Remaining kcal = that day's calorie goal - consumed kcal
 ```
 
-Keep calorie-goal history or a goal snapshot for each day so changing today's goal does not silently rewrite previous days. Derive totals from entries rather than permanently decrementing a counter. Creating a recipe or adding a planned meal does not count as eating it.
+The summary API uses the latest goal recorded before the selected day's next local midnight. Goals before the initial history record are unknown; an explicitly cleared goal remains unset. The current saved timezone interprets every date, so changing it can regroup past meals and alter the applicable goal. Remaining calories can be negative, and are `null` when no goal is available. Totals are derived from entries rather than a permanently decremented counter. Creating a recipe or adding a planned meal does not count as eating it.
 
 **Acceptance check:** adding an entry updates the summary once; editing it adjusts the difference; deleting it restores the previous total. Restarting the app preserves the result.
 
@@ -125,7 +130,7 @@ Planned meals and generated recipes remain separate from the food diary until th
 ## Suggested implementation order
 
 1. Finish device verification of the implemented goal/timezone Profile form and API.
-2. Verify manual creation/history on devices, add mobile edit/delete actions, then implement goal history and the live daily summary.
+2. Replace Home's sample meal list, verify the live calorie summary and manual creation/history on devices, then add mobile edit/delete actions and past-day controls.
 3. Add photo capture/upload, estimation and confirmation.
 4. Add recipe generation for both input flows.
 5. Connect saved recipes, weekly planning and groceries.

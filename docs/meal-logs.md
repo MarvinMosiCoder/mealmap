@@ -1,6 +1,6 @@
 # Manual meal logs
 
-Signed-in users can create a meal from Meals > Add meal and browse their saved meal history. PostgreSQL stores the entries; the API also supports editing and deletion. Mobile edit/delete actions and daily calorie summaries are still pending. Source reviewed on October 20, 2026.
+Signed-in users can create a meal from Meals > Add meal, browse saved history and view today's live calories on Home. PostgreSQL stores the entries; the API also supports editing and deletion. Mobile edit/delete actions, past-day controls and Home's live meal list remain pending. Home integration and the Meals layout were reviewed on October 22, 2026; the meal form/API were reviewed on October 20, 2026.
 
 ## Implementation map
 
@@ -14,14 +14,14 @@ Signed-in users can create a meal from Meals > Add meal and browse their saved m
 | `src/components/meal-date-time-field.tsx` | Native Android/iOS date/time selection in the device timezone |
 | `src/components/meal-log-list.tsx` | Paginated FlatList, focus refresh, pull-to-refresh, loading, empty and error states |
 | `src/app/add-meal.tsx` | Add meal route, safe area and keyboard-aware scrolling |
-| `src/app/(tabs)/meals.tsx` | Add meal link and list keyed by account ID |
+| `src/app/(tabs)/meals.tsx` | Your Meals header, timezone note, list keyed by account ID and fixed Add meal footer |
 | `src/app/_layout.tsx` | Authenticated `/add-meal` stack route with a native header |
 
 Apply all [migrations](migrations.md#apply-and-inspect) before using the feature. Accounts and sessions use the existing [login flow](login.md).
 
 ## Storage and calorie meaning
 
-One row represents a logged portion that the user ate. `serving_quantity` is the number of servings eaten; `kcal` is the total for that entire portion. Two servings at 250 kcal each means quantity `2` and kcal `500`. The list displays 500 kcal; a future summary must sum `kcal` directly rather than multiply it by quantity again.
+One row represents a logged portion that the user ate. `serving_quantity` is the number of servings eaten; `kcal` is the total for that entire portion. Two servings at 250 kcal each means quantity `2` and kcal `500`. The list displays 500 kcal; the daily summary sums `kcal` directly without multiplying it by quantity again.
 
 | Column | Storage and constraints |
 | --- | --- |
@@ -35,7 +35,7 @@ One row represents a logged portion that the user ate. `serving_quantity` is the
 | `eaten_at` | Required finite TIMESTAMPTZ for when the meal was eaten |
 | `created_at`, `updated_at` | Required TIMESTAMPTZ, default NOW(); PUT explicitly refreshes `updated_at` |
 
-The index is `(user_id, eaten_at DESC)`. `photo` and `recipe` are reserved schema values; their creation flows do not exist yet. Timestamps preserve an instant, not the originally selected timezone name. The current [account goal](preferences.md) remains nullable and is not copied onto meal logs.
+The index is `(user_id, eaten_at DESC)`. `photo` and `recipe` are reserved schema values; their creation flows do not exist yet. Timestamps preserve an instant, not the originally selected timezone name. The current [account goal](preferences.md) remains nullable and is not copied onto meal logs. Goal changes are recorded separately in [calorie-goal history](preferences.md#calorie-goal-history) and used by the [daily-summary API](daily-summary.md).
 
 ## API contract
 
@@ -117,7 +117,7 @@ Path IDs must be positive decimal strings without leading zeros and no greater t
 
 ## Mobile creation and history
 
-The Add meal link opens `/add-meal` under `Stack.Protected guard={!!user}`. The route is outside the tabs and shows a native Back header. Its ScrollView supports keyboard reachability; its safe area excludes the top already covered by the header.
+The Meals screen places Add meal below its scrollable history, in a fixed footer with a 100-pixel bottom margin. The button opens `/add-meal` under `Stack.Protected guard={!!user}`. The route is outside the tabs and shows a native Back header. Its ScrollView supports keyboard reachability; its safe area excludes the top already covered by the header. The history's empty copy still refers to an Add meal action above the list; that wording needs to follow the new layout.
 
 The form starts with empty name, category, serving quantity and calorie inputs, plus the current date/time. It assigns no calorie value or category. Numeric drafts remain strings. Save trims the name, accepts a decimal point or comma for servings, validates the fields and sends numeric values plus `eatenAt.toISOString()`. Inputs such as `.5` and `1.` normalize to JSON numbers; blank kcal is invalid while an explicit `0` is valid.
 
@@ -127,7 +127,9 @@ The Meals tab renders `MealLogList` with `key={user.id}`, so a different account
 
 ### Timezone and native pickers
 
-Entry and history display use the device timezone, which is labelled in the UI. They do not currently use the Profile timezone. That preference is intended for future daily-summary boundaries. Choosing an instant and grouping it into a diary day are separate operations; test differences around midnight when integrating summaries.
+Entry and history display use the device timezone, which is labelled in the UI. Home and the daily-summary API instead group entries using the current saved Profile timezone. Choosing an instant and grouping it into a diary day are separate operations; test differences around midnight. See [day and goal rules](daily-summary.md#day-and-goal-rules).
+
+After saving a meal, return Home to reload today's calories and count. Editing or deleting through the API changes the next summary response; Home has no live subscription while it remains active. Its separate today's-meals cards still show samples, so inspect Meals for actual entries. See [Home refresh behavior](daily-summary.md#refresh-and-error-behavior).
 
 `@react-native-community/datetimepicker` 8.6.0 is installed for SDK 55 and registered in `app.json`. Android uses `DateTimePickerAndroid.open()` with separate date/time dialogs; iOS uses the compact combined datetime picker. The 8.6.0 callback is `onChange`; only `event.type === "set"` updates the value, so cancellation preserves it. See [SDK 55 picker documentation](https://docs.expo.dev/versions/v55.0.0/sdk/date-time-picker/) and [8.6.0 API types](https://github.com/react-native-datetimepicker/datetimepicker/blob/v8.6.0/src/index.d.ts).
 
@@ -172,8 +174,9 @@ These are acceptance checks, not a record of completed device testing:
 ## Remaining work
 
 - Mobile edit/delete actions and confirmation/reload behavior; only the API and helpers currently support those mutations.
-- Daily-summary endpoint, selected-day navigation, profile-timezone boundaries, goal history/snapshots and over-goal presentation.
-- Replace Home's sample calorie ring and today's meals with live data. Saving a log does not currently change Home.
+- Selected-day navigation and filters; today's calorie summary and over-goal presentation are implemented on Home.
+- Replace Home's sample today's-meals cards with actual entries for the same day as its live calorie ring.
+- Align the empty-list prompt with the fixed Add meal footer and verify its static spacing on small screens.
 - Server idempotency for retries after a lost response or reopening the form. The local save lock does not guarantee exactly-once creation across requests.
 - Photo/recipe logging, saved recipes, planning and groceries.
 

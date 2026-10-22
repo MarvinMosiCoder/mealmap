@@ -49,6 +49,8 @@ The bar uses absolute positioning and a transparent background around the raised
 
 The preferences form is embedded in `/profile`; it adds no mobile route. Its `/profile/preferences` path is an Express API endpoint. A preference 401 triggers `refreshSession(false)`, and existing guards respond if AuthProvider clears the session. Only deliberate logout explicitly selects `/login`. Profile also guards Logout while preferences are saving; see [preferences](preferences.md#profile-form-behavior).
 
+Signed-in Home embeds `HomeDailySummary`, keyed by account ID, and reloads it whenever Home gains focus. Its Open Profile action links to `/profile` for missing timezone/goal configuration; returning Home fetches saved changes. Summary 401 responses also request `refreshSession(false)`. `/daily-summary` is an Express endpoint, not another mobile route. See [Home summary behavior](daily-summary.md#refresh-and-error-behavior).
+
 ## Meal entry and history
 
 Meals links to `/add-meal` through `Link asChild` around a Pressable. Add meal belongs to the root authenticated stack, not the signed-out Login group. Its native header provides Back, it has no tab bar, and its safe area covers left/right/bottom while the header handles the top.

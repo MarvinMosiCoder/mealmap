@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch --env-file=.env server.mjs",
-    "migrate": "node --env-file=.env ./node_modules/node-pg-migrate/bin/node-pg-migrate.js"
+    "migrate": "node --env-file=.env ./node_modules/node-pg-migrate/bin/node-pg-migrate.js",
+    "lint": "expo lint"
   },
   "keywords": [],
   "author": "",

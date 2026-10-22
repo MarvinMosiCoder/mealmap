@@ -159,7 +159,7 @@ export function createMealLogsRouter({ pool, requireAuth }) {
         )
     ) {
         return res.status(400).json({
-        message: "Supported query parameters are limit and offset.",
+            message: "Supported query parameters are limit and offset.",
         });
     }
 

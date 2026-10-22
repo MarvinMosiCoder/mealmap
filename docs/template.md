@@ -1,6 +1,6 @@
 # Template and artwork notes
 
-MealMap has grown beyond its initial UI template: native authentication, session loading/retry, navigation guards, Profile preferences, manual meal creation/history and category browsing are connected. See [mobile-ui.md](mobile-ui.md), [navigation.md](navigation.md), [login.md](login.md), [preferences.md](preferences.md) and [meal-logs.md](meal-logs.md).
+MealMap has grown beyond its initial UI template: native authentication, session loading/retry, navigation guards, Profile preferences, manual meal creation/history, Home's daily calorie summary and category browsing are connected. See [mobile-ui.md](mobile-ui.md), [navigation.md](navigation.md), [login.md](login.md), [preferences.md](preferences.md), [meal-logs.md](meal-logs.md) and [daily-summary.md](daily-summary.md).
 
 ## Artwork
 
@@ -20,10 +20,10 @@ The original food-image generation prompts remain in [asset-prompts.json](asset-
 - Edit featured meal text in `src/components/featured-meal-card.tsx`.
 - Edit category copy, sample ideas and hero artwork in `src/data/meal-categories.ts`; keep the card definitions in `src/components/explore-by-meal.tsx` aligned with the supported IDs.
 - Edit the login design and form behavior in `src/components/login-content.tsx`, with palette values in `src/styles/login-theme.ts`.
-- Edit calorie/macro values in `src/components/nutrition-summary.tsx` and meal entries in `src/components/todays-meals.tsx`. These are independent sample values, not live calculations.
-- Edit goal/timezone form behavior in `src/components/profile-preferences-form.tsx` and its API functions in `src/lib/preferences.ts`. Saved preferences do not yet drive Home's nutrition summary.
+- Edit live calorie-card presentation in `src/components/nutrition-summary.tsx`; its `summary` prop supplies the values. Loading and refresh behavior live in `home-daily-summary.tsx`, with date/API helpers in `src/lib/daily-summary.ts`. The old sample macro bars were removed.
+- Edit goal/timezone form behavior in `src/components/profile-preferences-form.tsx` and its API functions in `src/lib/preferences.ts`. Returning Home loads the saved timezone and applicable recorded goal.
 - Extend the implemented meal form/list through `src/components/meal-log-form.tsx`, `meal-date-time-field.tsx` and `meal-log-list.tsx`, using `src/lib/meal-logs.ts` and the owned backend routes. Mobile edit/delete controls remain pending.
-- Connect Home to a future daily-summary API; its existing sample components are separate from the live Meals history.
+- Replace the three sample entries in `src/components/todays-meals.tsx` with owned entries for the same Profile-timezone day as the live summary. The current calorie ring already uses the [daily-summary API](daily-summary.md); the sample meal cards and featured dinner remain separate from it.
 - Build the Plan and Groceries placeholders with native components and authenticated API endpoints.
 - Add actions to the decorative search circle, notification bell and `See plan` label when those features exist.
 - Keep Profile connected to AuthProvider; extend both login and session-restoration responses when adding account identity fields. Preferences use their separate GET/PATCH contract.
